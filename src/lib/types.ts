@@ -137,6 +137,8 @@ export interface InterviewFeedback {
     strengths: string[];
     improvements: string[];
     summary: string;
+    communicationStyle: string;   // e.g. "Clear and structured, but slightly rushed"
+    idealAnswers: { question: string; ideal: string }[];
 }
 
 // --- Job Suggestions ---

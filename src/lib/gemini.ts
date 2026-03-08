@@ -151,7 +151,11 @@ Return a JSON object with:
 - "confidenceScore": number from 0-100 (assertiveness, decisiveness, pacing)
 - "strengths": array of 2-3 strength strings
 - "improvements": array of 2-3 improvement area strings
-- "summary": 2-3 sentence overall performance summary`
+- "summary": 2-3 sentence overall performance summary
+- "communicationStyle": a single sentence describing the candidate's communication style (e.g. "Clear and structured, but slightly rushed at times")
+- "idealAnswers": array of objects, one per candidate answer, each with:
+  - "question": the interviewer's question text (verbatim or summarised)
+  - "ideal": the ideal 2-3 sentence model answer for that question`
     );
 }
 
