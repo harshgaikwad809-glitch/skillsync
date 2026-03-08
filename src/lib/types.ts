@@ -131,6 +131,9 @@ export interface InterviewSession {
 
 export interface InterviewFeedback {
     overallScore: number;
+    technicalScore: number;
+    communicationScore: number;
+    confidenceScore: number;
     strengths: string[];
     improvements: string[];
     summary: string;

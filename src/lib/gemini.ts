@@ -145,7 +145,10 @@ Transcript:
 ${transcript}
 
 Return a JSON object with:
-- "overallScore": number from 0-100
+- "overallScore": number from 0-100 (weighted average of the three sub-scores)
+- "technicalScore": number from 0-100 (depth and correctness of technical answers)
+- "communicationScore": number from 0-100 (clarity, structure, and articulation)
+- "confidenceScore": number from 0-100 (assertiveness, decisiveness, pacing)
 - "strengths": array of 2-3 strength strings
 - "improvements": array of 2-3 improvement area strings
 - "summary": 2-3 sentence overall performance summary`
