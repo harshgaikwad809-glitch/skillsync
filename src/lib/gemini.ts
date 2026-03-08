@@ -107,25 +107,40 @@ export async function chatWithInterviewer(
     topic: string,
     targetRole: string
 ): Promise<string> {
-    const formattedHistory = history
-        .map((msg) => `${msg.role === 'interviewer' ? 'Interviewer' : 'Candidate'}: ${msg.content}`)
-        .join('\n\n');
-
-    return ask(
-        `${formattedHistory ? `Previous conversation:\n${formattedHistory}\n\n` : ''}Candidate: ${userMessage}
-
-Based on the conversation above, respond as the interviewer. Ask a natural follow-up question, provide brief feedback on their answer if applicable, or move to the next topic.`,
-        `You are Sarah, an experienced technical interviewer at a top tech company. You are conducting a ${topic} interview for a ${targetRole} position.
+    const systemInstruction = `You are Sarah, an experienced technical interviewer at a top tech company. You are conducting a ${topic} interview for a ${targetRole} position.
 
 Your interview style:
 - Be professional, encouraging, but thorough
 - Ask one question at a time
-- After the candidate answers, give brief feedback (1 sentence) then ask the next question
+- After the candidate answers, give brief positive feedback (1 sentence) then ask the next question
 - Cover both conceptual understanding and practical experience
-- If this is the start of the interview, introduce yourself briefly and ask the first question
-- Keep responses concise (2-4 sentences max)`
-    );
+- If this is the first message, introduce yourself briefly and ask the first question
+- Keep responses concise (2-4 sentences max)`;
+
+    // Build properly structured contents array for Gemini multi-turn format
+    // Gemini uses 'user' and 'model' roles (not 'user' / 'interviewer')
+    const contents = [
+        // Map previous history to proper Gemini roles
+        ...history.map(msg => ({
+            role: msg.role === 'interviewer' ? 'model' : 'user',
+            parts: [{ text: msg.content }],
+        })),
+        // Add the new user message
+        {
+            role: 'user',
+            parts: [{ text: userMessage }],
+        },
+    ];
+
+    const response = await ai.models.generateContent({
+        model: MODEL,
+        contents,
+        config: { systemInstruction },
+    });
+
+    return response.text ?? 'I apologize, I could not generate a response. Please try again.';
 }
+
 
 /**
  * MOCK INTERVIEW — Generate a feedback summary for the entire session.

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Video, VideoOff, Mic, MicOff, PhoneOff, Send, RotateCcw,
   ChevronRight, Loader2, CheckCircle2, BotMessageSquare,
@@ -127,8 +127,8 @@ function SetupScreen({ onStart }: { onStart: (cfg: Config) => void }) {
 
   const badge = (ok: boolean | null, label: string) => (
     <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${ok === null ? 'bg-slate-50 text-slate-500 border-slate-200'
-        : ok ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-          : 'bg-rose-50 text-rose-600 border-rose-200'
+      : ok ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        : 'bg-rose-50 text-rose-600 border-rose-200'
       }`}>
       <div className={`w-1.5 h-1.5 rounded-full ${ok === null ? 'bg-slate-400' : ok ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
       {label}: {ok === null ? 'Checking…' : ok ? 'Ready' : 'Not found'}
@@ -207,8 +207,8 @@ function SetupScreen({ onStart }: { onStart: (cfg: Config) => void }) {
               {Object.keys(INDUSTRIES).map(ind => (
                 <button key={ind} onClick={() => setIndustry(ind)}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${industry === ind
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
                     }`}>
                   {ind}
                 </button>
@@ -234,8 +234,8 @@ function SetupScreen({ onStart }: { onStart: (cfg: Config) => void }) {
               {(TOPICS_FOR_ROLE[role] ?? []).map(t => (
                 <button key={t} onClick={() => setTopic(t)}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${topic === t
-                      ? 'bg-violet-600 text-white border-violet-600'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300 hover:text-violet-600'
+                    ? 'bg-violet-600 text-white border-violet-600'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300 hover:text-violet-600'
                     }`}>
                   {t}
                 </button>
@@ -250,10 +250,10 @@ function SetupScreen({ onStart }: { onStart: (cfg: Config) => void }) {
               {DIFFICULTIES.map(d => (
                 <button key={d} onClick={() => setDifficulty(d)}
                   className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all ${difficulty === d
-                      ? d === 'Junior' ? 'bg-emerald-500 text-white border-emerald-500'
-                        : d === 'Mid-Level' ? 'bg-amber-500 text-white border-amber-500'
-                          : 'bg-rose-500 text-white border-rose-500'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                    ? d === 'Junior' ? 'bg-emerald-500 text-white border-emerald-500'
+                      : d === 'Mid-Level' ? 'bg-amber-500 text-white border-amber-500'
+                        : 'bg-rose-500 text-white border-rose-500'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                     }`}>
                   {d}
                 </button>
@@ -291,8 +291,10 @@ function SetupScreen({ onStart }: { onStart: (cfg: Config) => void }) {
 
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    SpeechRecognition: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    webkitSpeechRecognition: any;
   }
 }
 
@@ -312,7 +314,8 @@ function LiveInterview({ config, onEnd }: {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     const t = setInterval(() => setElapsed(p => p + 1), 1000);
@@ -329,7 +332,13 @@ function LiveInterview({ config, onEnd }: {
   useEffect(() => {
     (async () => {
       try {
-        const greeting = await chatWithInterviewer([], 'Hello, I am ready.', config.topic, config.role);
+        // Pass empty history — Sarah starts fresh with an intro + first question
+        const greeting = await chatWithInterviewer(
+          [],
+          'Please introduce yourself and ask the first interview question.',
+          config.topic,
+          config.role
+        );
         setMessages([{ role: 'interviewer', content: greeting, timestamp: Date.now() }]);
       } catch {
         setMessages([{
@@ -351,7 +360,10 @@ function LiveInterview({ config, onEnd }: {
     if (!answer.trim() || isAiThinking) return;
     if (isListening) { recognitionRef.current?.stop(); setIsListening(false); }
 
-    const userMsg: InterviewMessage = { role: 'user', content: answer.trim(), timestamp: Date.now() };
+    const userAnswer = answer.trim();
+    const userMsg: InterviewMessage = { role: 'user', content: userAnswer, timestamp: Date.now() };
+    // Keep previous history (before adding user's message) for the API call
+    const prevHistory = messages.map(m => ({ role: m.role, content: m.content }));
     const newHistory = [...messages, userMsg];
     setMessages(newHistory);
     setAnswer('');
@@ -363,16 +375,19 @@ function LiveInterview({ config, onEnd }: {
     }
 
     try {
+      // Pass previous history + userAnswer separately to avoid duplication
       const aiReply = await chatWithInterviewer(
-        newHistory.map(m => ({ role: m.role, content: m.content })),
-        answer.trim(), config.topic, config.role
+        prevHistory,
+        userAnswer,
+        config.topic,
+        config.role
       );
       setMessages(prev => [...prev, { role: 'interviewer', content: aiReply, timestamp: Date.now() }]);
       setQuestionCount(q => q + 1);
     } catch {
       setMessages(prev => [...prev, {
         role: 'interviewer',
-        content: 'I had a brief connection issue. Please continue or click "End Interview" to see your results.',
+        content: 'I had a brief connection issue. Please try submitting your answer again.',
         timestamp: Date.now(),
       }]);
     }
@@ -745,7 +760,7 @@ export function MockInterview() {
             <div key={p} className="flex items-center gap-2">
               {i > 0 && <div className={`h-px w-8 transition-all ${idx >= i ? 'bg-indigo-400' : 'bg-slate-200'}`} />}
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${phase === p ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-                  : idx > i ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
+                : idx > i ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
                 }`}>{idx > i ? '✓' : i + 1}</div>
               <span className={`text-xs font-medium capitalize ${phase === p ? 'text-indigo-600' : 'text-slate-400'}`}>
                 {p === 'setup' ? 'Setup' : p === 'live' ? 'Interview' : 'Feedback'}
